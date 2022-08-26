@@ -1,5 +1,5 @@
 require("@nomicfoundation/hardhat-toolbox");
-require('dotenv').config()
+require('dotenv').config({path: '../.env'})
 
 const projectId = process.env.INFURA_PROJECT_ID
 const privateKey = process.env.DEPLOYER_SIGNER_PRIVATE_KEY
