@@ -32,7 +32,10 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
     uint lotteryPrice;
     uint lotteryBalance;
     address currentWinner;
-    Counters.Counter private lotteryId;
+    uint lotteryId;
+
+    //All the lotteries
+    mapping (uint => address) lotteryHistory;
 
 
     constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
@@ -40,8 +43,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
         s_subscriptionId = subscriptionId;
 
         lotteryBalance = 0 ether;
-        //Lottery Price = 1 ether because it´s easear to coding
-        lotteryPrice = 1 ether;
+        lotteryPrice = 0.1 ether;
     }
 
     //VRF funtions
@@ -65,7 +67,10 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
 
     //Función buy ticket
     //Now -> msg.value = VALUE in Remix
-    //Later -> onClick msg.value = XXX ether
+    //onClick from the Front msg.value = 0.1 ether
+    //We have to set different times for both function:
+    //1st - requestRandomWords() it takes like a 30 minutes to deliver de numer
+    //2nd - buyTicket() 
     function buyTicket() public payable {
         require(msg.value == lotteryPrice, "To participate, please add the require amount.");
         players.push(payable(msg.sender));
@@ -75,10 +80,16 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
     //Función pick the winner:
     //Receives the number of ChainLink, s_randomWords[0], and adapts to number of players
     //0 =<  winner number =< number of players
-    function pickTheWinner() public {
+    function pickTheWinner() public onlyOwner {
         uint index = s_randomWords[0] % players.length;
         console.log (index);
         currentWinner = players[index];
+
+        //Reset the lottery
+        lotteryHistory[lotteryId] = currentWinner;
+        lotteryId ++;
+        lotteryBalance = 0 ether;
+        players = new address payable[](0);
     }
 
 
@@ -98,5 +109,9 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
         return currentWinner;
     }
 
+    //Lottery History:
+    function getHistoryWinner(uint _lotteryId) public view returns(address) {
+        return lotteryHistory[_lotteryId];
+    }
 
 }
