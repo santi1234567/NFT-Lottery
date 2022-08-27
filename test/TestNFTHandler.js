@@ -40,6 +40,23 @@ describe("TestNFTHandler Contract", () => {
       expect(ownerOfMinted).to.equal(nftHandlerContract.address);  
     });
 
+    it("Ends lottery and Nft is given to winner.", async () => {
+      const { nftContractOwner, nftContract, addr1 } = await nftSetup({});
+      const { nftHandlerOwner, nftHandlerContract} = await handlerSetup({});
+
+      await nftContract.safeMint();
+      const nftId = 0;
+      ownerOfMinted = await nftContract.ownerOf(nftId);
+      await nftContract.approve(nftHandlerContract.address, nftId);
+      await nftHandlerContract.startLottery(nftId, nftContract.address);
+
+      await nftHandlerContract.endLottery(0, addr1.address);
+      
+      ownerOfMinted = await nftContract.ownerOf(nftId);
+      expect(ownerOfMinted).to.equal(addr1.address);  
+
+    });
+
   });
 
 });
