@@ -3,6 +3,8 @@ pragma solidity ^0.8.7;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
@@ -10,7 +12,7 @@ import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 import "hardhat/console.sol";
 
 
-contract Lottery is Ownable, VRFConsumerBaseV2 {
+contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
     using Counters for Counters.Counter;
     VRFCoordinatorV2Interface COORDINATOR;
 
@@ -34,10 +36,15 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
     uint lotteryBalance;
     address currentWinner;
     uint lotteryId;
+    Counters.Counter private _lotteryCounter;
 
     //All the lotteries
     mapping (uint => address) lotteryHistory;
 
+    struct NFTLotteryPrize {
+        address nftContractAddress;
+        uint256 tokenId;
+    }
 
     constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
         COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
@@ -57,6 +64,12 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
         address currentWinner,
         uint awardBalance
     );
+
+
+    // Funtion override to allow contract to recieve NFTs
+    function onERC721Received(address, address, uint256, bytes memory) public virtual override returns(bytes4) {
+        return this.onERC721Received.selector;
+    }
 
 
     //VRF funtions
@@ -109,8 +122,33 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
 
         lotteryBalance = 0 ether;
         players = new address payable[](0);
+
+
+        //NFTLotteryPrize memory prize = PREMIO
+
+        // Interface for interacting with the nftContract:
+        //IERC721 nftContract = IERC721(prize.nftContractAddress);
+
+        // Transfer NFT from this contract to the winner
+        //nftContract.safeTransferFrom(address(this), players[index], prize.tokenId);
     }
 
+
+    // Starts a Lottery. User should have already given access to the contract to allow the transfer of the NFT
+    // Recieves the NFT Id and the contract of the NFT.
+    function startLottery(uint256 _tokenId, address _nftContractAddress) public returns (bytes4){
+        IERC721 nftContract = IERC721(_nftContractAddress);
+        nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
+        // Initialize the lottery over here
+        // prize = NFTLotteryPrize(_nftContractAddress, _tokenId);
+        // lotteryId = _lotteryCounter.current();
+
+        //
+        _lotteryCounter.increment();
+
+        // Return value to allow the ERC721 openzeppelin implementation to fulfill the NFT transaction.
+        return this.onERC721Received.selector;
+    }
 
     //GET FUNCTIONS:
     //Contract balance:
