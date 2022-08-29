@@ -86,8 +86,9 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
         console.log (index);
         currentWinner = players[index];
 
-        //Reset the lottery
-        lotteryHistory[lotteryId] = currentWinner;
+        //Transfer 80% of lotteryBalance to the winner and reset.
+        (bool success, ) = payable(players[index]).call{value: (lotteryBalance * 80) / 100}("");
+        require(success, "failed");
         lotteryId ++;
         lotteryBalance = 0 ether;
         players = new address payable[](0);
