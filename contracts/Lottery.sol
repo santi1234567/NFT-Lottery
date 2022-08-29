@@ -47,6 +47,18 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
         lotteryPrice = 0.1 ether;
     }
 
+    //Events
+    event BuyTicket (
+        address player,
+        uint lotteryBalance 
+    );
+
+    event PickTheWinner (
+        address currentWinner,
+        uint awardBalance
+    );
+
+
     //VRF funtions
     //We need funds (LINK) into the  s_subscriptionId -> revert
     function requestRandomWords() external onlyOwner {
@@ -76,6 +88,8 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
         require(msg.value == lotteryPrice, "To participate, please add the require amount.");
         players.push(payable(msg.sender));
         lotteryBalance = lotteryBalance + lotteryPrice;
+
+        emit BuyTicket(msg.sender, lotteryBalance);
     }
 
     //Función pick the winner:
@@ -87,9 +101,12 @@ contract Lottery is Ownable, VRFConsumerBaseV2 {
         currentWinner = players[index];
 
         //Transfer 80% of lotteryBalance to the winner and reset.
-        (bool success, ) = payable(players[index]).call{value: (lotteryBalance * 80) / 100}("");
+        uint awardBalance = (lotteryBalance * 80) / 100;
+        (bool success, ) = payable(players[index]).call{value: awardBalance}("");
         require(success, "failed");
-        lotteryId ++;
+
+        emit PickTheWinner(players[index], awardBalance);
+
         lotteryBalance = 0 ether;
         players = new address payable[](0);
     }
