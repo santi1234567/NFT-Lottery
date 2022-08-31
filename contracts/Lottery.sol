@@ -98,7 +98,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
     //1st - requestRandomWords() it takes like a 30 minutes to deliver de numer
     //2nd - buyTicket() 
     function buyTicket() public payable {
-        require(msg.value == lotteryPrice, "To participate, please add the require amount.");
+        require(msg.value == lotteryPrice, "To participate, please fund the address with enough ether to buy the ticket.");
         players.push(payable(msg.sender));
         lotteryBalance = lotteryBalance + lotteryPrice;
 
