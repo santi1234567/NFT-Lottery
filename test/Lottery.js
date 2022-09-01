@@ -34,37 +34,36 @@ describe("Lottery Contract", () => {
                 await nftContract.safeMint();
                 const nftId = 0;
                 ownerOfMinted = await nftContract.ownerOf(nftId);
-        
+                
+                const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
                 // Start lottery
-                expect(lotteryContract.startLottery(nftId, nftContract.address)).to.be.revertedWith(
+                await expect(lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address)).to.be.revertedWith(
                     "ERC721: caller is not token owner nor approved"
                 );
         
             });
 
-            it("Tries to start a lottery with ticket price <= 0 and fails", async () => {
+            it("Tries to start a lottery with ticket price = 0 and fails", async () => {
                 const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
         
                 // Mint an NFT
                 await nftContract.safeMint();
                 const nftId = 0;
                 ownerOfMinted = await nftContract.ownerOf(nftId);
-        
-                // Start lottery
-                expect(true).to.equal(false);
-        
+
+                 // Approve contract to be able to transfer the NFT
+                 await nftContract.approve(lotteryContract.address, nftId);
+       
+
+                const bettingPrice = ethers.utils.parseEther("0"); // 0 ether
+
                 // Ticket price = 0
-                /*expect(lotteryContract.startLottery(nftId, nftContract.address)).to.be.revertedWith(
+                await expect(lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address)).to.be.revertedWith(
                     "<ERROR MESSAGE>"
-                );*/
-        
-                 // Ticket price < 0
-                /*expect(lotteryContract.startLottery(nftId, nftContract.address)).to.be.revertedWith(
-                    "<ERROR MESSAGE>"
-                );*/       
+                );   
         
             });
-        
+            
             it("Starts a lottery and NFT is transfered to lottery contract", async () => {
                 const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
         
@@ -74,12 +73,13 @@ describe("Lottery Contract", () => {
         
                 // Approve contract to be able to transfer the NFT
                 await nftContract.approve(lotteryContract.address, nftId);
+  
                 // Start lottery
-                await lotteryContract.startLottery(nftId, nftContract.address);
-        
-        
+                const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
+               
                 ownerOfMinted = await nftContract.ownerOf(nftId);           
-                expect(ownerOfMinted).to.equal(lotteryContract.address);  
+                await expect(ownerOfMinted).to.equal(lotteryContract.address);  
             });
         });
 
@@ -94,7 +94,8 @@ describe("Lottery Contract", () => {
                 // Approve contract to be able to transfer the NFT
                 await nftContract.approve(lotteryContract.address, nftId);
                 // Start lottery
-                await lotteryContract.startLottery(nftId, nftContract.address);
+                const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
                 
                 // Buy ticket
                 //await lotteryContract.buyTicket();

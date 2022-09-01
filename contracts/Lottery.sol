@@ -102,6 +102,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
     //Start lottery function.
     //Creates an instance from singleLottery
     function startLottery (uint _tokenId, address _nftContractAddress, uint _bettingPrice, address _beneficiaryAddress) public returns (bytes4) {
+        require(_bettingPrice > 0, "Betting price should be greater than zero.");
         IERC721 nftContract = IERC721(_nftContractAddress);
         nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
 
@@ -125,6 +126,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
 
     //Buy a ticket for an especific NFT lottery
     function buyTicket(uint _lotteryId) public payable {
+        // require lottery to exist
         singleLottery storage l = historicLottery[_lotteryId];
         require(msg.value == l.bettingPrice, "To participate, please fund the address with enough ether to buy the ticket.");
         l.players.push(payable(msg.sender));
@@ -137,6 +139,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
     //Receives the number of ChainLink, s_randomWords[0], and adapts to number of players
     //0 =<  winner number =< number of players
     function pickTheWinner(uint _lotteryId) public {
+        // require lottery to exist
         singleLottery storage l = historicLottery[_lotteryId];
         uint index = s_randomWords[0] % l.players.length;
         l.lotteryWinner = l.players[index];
@@ -190,6 +193,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
 
     //Each lottery info
     function getLottery (uint _lotteryId) public view returns (address, address, uint, bool, address[] memory, uint, address, uint) {
+        // require lottery to exist
         singleLottery storage l = historicLottery[_lotteryId];
         return (l.nftOwner, l.nftContractAddress, l.bettingPrice, l.activeLottery, l.players, l.lotteryBalance, l.lotteryWinner, l.startDate);
     }
