@@ -705,8 +705,8 @@
       ]
     },
     "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\contracts\\LotteryMultiple.sol": {
-      "lastModificationDate": 1661867195969,
-      "contentHash": "ecb1e0fcde9aaca4d2309eca9f84864c",
+      "lastModificationDate": 1662039728379,
+      "contentHash": "d79888ece4fc82764ab089ea6fd17bd4",
       "sourceName": "contracts/LotteryMultiple.sol",
       "solcConfig": {
         "version": "0.8.9",

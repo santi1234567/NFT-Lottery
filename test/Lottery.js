@@ -26,82 +26,185 @@ describe("Lottery Contract", () => {
     }
 
     describe("Lottery Tests", () => {
-
-    it("Tries to start a lottery without approving NFT and fails", async () => {
-        const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
-
-        // Mint an NFT
-        await nftContract.safeMint();
-        const nftId = 0;
-        ownerOfMinted = await nftContract.ownerOf(nftId);
-
-        // Start lottery
-        expect(lotteryContract.startLottery(nftId, nftContract.address)).to.be.revertedWith(
-            "ERC721: caller is not token owner nor approved"
-        );
-
-    });
-
-    it("Starts a lottery and NFT is transfered to lottery contract", async () => {
-        const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
-
-        // Mint an NFT
-        await nftContract.safeMint();
-        const nftId = 0;
-
-        // Approve contract to be able to transfer the NFT
-        await nftContract.approve(lotteryContract.address, nftId);
-        // Start lottery
-        await lotteryContract.startLottery(nftId, nftContract.address);
-
-
-        ownerOfMinted = await nftContract.ownerOf(nftId);           
-        expect(ownerOfMinted).to.equal(lotteryContract.address);  
-    });
-
-    it("Successfully buys a ticket for a lottery", async () => {
-        const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
-
-        // Mint an NFT
-        await nftContract.safeMint();
-        const nftId = 0;
-
-        // Approve contract to be able to transfer the NFT
-        await nftContract.approve(lotteryContract.address, nftId);
-        // Start lottery
-        await lotteryContract.startLottery(nftId, nftContract.address);
+        describe("Starting Lottery Tests", () => {
+            it("Tries to start a lottery without approving NFT and fails", async () => {
+                const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
         
-        // Buy ticket
-        //await lotteryContract.buyTicket();
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+                ownerOfMinted = await nftContract.ownerOf(nftId);
+        
+                // Start lottery
+                expect(lotteryContract.startLottery(nftId, nftContract.address)).to.be.revertedWith(
+                    "ERC721: caller is not token owner nor approved"
+                );
+        
+            });
 
-        // TODO: Check if ticket is bought
-    });
-
-    it("Tries buys a ticket for a lottery without enough funds and fails", async () => {
-        const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
-
-        // Mint an NFT
-        await nftContract.safeMint();
-        const nftId = 0;
-
-        // Approve contract to be able to transfer the NFT
-        await nftContract.approve(lotteryContract.address, nftId);
-        // Start lottery
-        await lotteryContract.startLottery(nftId, nftContract.address);
-
-        await owner.sendTransaction({
-            to: addr1.address,
-            value: ethers.utils.parseEther("9999.9"), // Depletes owner's ether
+            it("Tries to start a lottery with ticket price <= 0 and fails", async () => {
+                const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+                ownerOfMinted = await nftContract.ownerOf(nftId);
+        
+                // Start lottery
+                expect(true).to.equal(false);
+        
+                // Ticket price = 0
+                /*expect(lotteryContract.startLottery(nftId, nftContract.address)).to.be.revertedWith(
+                    "<ERROR MESSAGE>"
+                );*/
+        
+                 // Ticket price < 0
+                /*expect(lotteryContract.startLottery(nftId, nftContract.address)).to.be.revertedWith(
+                    "<ERROR MESSAGE>"
+                );*/       
+        
+            });
+        
+            it("Starts a lottery and NFT is transfered to lottery contract", async () => {
+                const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+        
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                // Start lottery
+                await lotteryContract.startLottery(nftId, nftContract.address);
+        
+        
+                ownerOfMinted = await nftContract.ownerOf(nftId);           
+                expect(ownerOfMinted).to.equal(lotteryContract.address);  
+            });
         });
 
+        describe("Buying Ticket Tests", () => {
+            it("Successfully buys a ticket for a lottery", async () => {
+                const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+        
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                // Start lottery
+                await lotteryContract.startLottery(nftId, nftContract.address);
+                
+                // Buy ticket
+                //await lotteryContract.buyTicket();
+                expect(true).to.equal(false);
+        
+                // TODO: Check if ticket is bought
+            });
+        
+            it("Tries buying a ticket for a lottery without enough funds and fails", async () => {
+                const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+        
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                // Start lottery
+                await lotteryContract.startLottery(nftId, nftContract.address);
+        
+                await owner.sendTransaction({
+                    to: addr1.address,
+                    value: ethers.utils.parseEther("9999.88"), // Depletes owner's ether
+                });
+        
+        
+                // Buy ticket
+                //expect(lotteryContract.buyTicket()).to.be.revertedWith(
+        //          "To participate, please fund the address with enough ether to buy the ticket."
+                //);
+                expect(true).to.equal(false);
+        
+            });   
+        
+            it("Buys tickets with different addresses and they are asigned correctly", async () => {
+                const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+        
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                // Start lottery
+                await lotteryContract.startLottery(nftId, nftContract.address);
+                
+                // Buy ticket (owner)
+                //await lotteryContract.buyTicket();
+        
+                // Buy ticket (addr1)
+                //await lotteryContract.connect(addr1).buyTicket();
+        
+                // Buy ticket (addr2)
+                //await lotteryContract.connect(addr2).buyTicket();
+        
+                
+                // TODO: Check if tickets were bought correctly
+                expect(true).to.equal(false);
+        
+            });   
+        
+        
+            it("Buys multiple tickets and they are asigned correctly", async () => {
+                const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+        
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                // Start lottery
+                await lotteryContract.startLottery(nftId, nftContract.address);
+                
+                // Buy tickets (owner)
+                //await lotteryContract.buyTicket();
+                //await lotteryContract.buyTicket();
+                //await lotteryContract.buyTicket();
+                //await lotteryContract.buyTicket();
+                //await lotteryContract.buyTicket();
+                
+                // TODO: Check if tickets were bought correctly
+                expect(true).to.equal(false);
+        
+            });   
+        
+            it("Tries to buy a ticket for a lottery that has already ended and fails", async () => {
+                const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+        
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                // Start lottery
+                await lotteryContract.startLottery(nftId, nftContract.address);
+        
+                // TODO: End lottery
+        
+        
+                expect(true).to.equal(false);
+                // Buy ticket
+                //expect(lotteryContract.buyTicket()).to.be.revertedWith(
+        //          "<ERROR MESSAGE>"
+                //);
+            });
+        });
+    
 
-        // Buy ticket
-        //expect(lotteryContract.buyTicket()).to.be.revertedWith(
-//          "To participate, please fund the address with enough ether to buy the ticket."
-        //);
-
-        // TODO: Check if ticket is bought
-    });   
 
     });
 
