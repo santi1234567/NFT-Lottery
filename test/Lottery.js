@@ -59,7 +59,7 @@ describe("Lottery Contract", () => {
 
                 // Ticket price = 0
                 await expect(lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address)).to.be.revertedWith(
-                    "<ERROR MESSAGE>"
+                    "Betting price should be greater than zero."
                 );   
         
             });
@@ -96,7 +96,7 @@ describe("Lottery Contract", () => {
                 // Start lottery
                 const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
                 await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
-                
+
                 // Buy ticket
                 //await lotteryContract.buyTicket();
                 expect(true).to.equal(false);
