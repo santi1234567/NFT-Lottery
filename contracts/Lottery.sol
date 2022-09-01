@@ -30,41 +30,49 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
     uint256 public s_requestId;
 
 
-   //lottery variables
-    address payable[] public players;
-    uint lotteryPrice;
-    uint lotteryBalance;
-    address currentWinner;
-    uint lotteryId;
-    Counters.Counter private _lotteryCounter;
-
-    //All the lotteries
-    mapping (uint => address) lotteryHistory;
-
-    struct NFTLotteryPrize {
-        address nftContractAddress;
-        uint256 tokenId;
-    }
-
     constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
         COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
         s_subscriptionId = subscriptionId;
-
-        lotteryBalance = 0 ether;
-        lotteryPrice = 0.1 ether;
     }
 
-    //Events
+    Counters.Counter lotteryId;
+
+    struct singleLottery {
+        address nftOwner;
+        uint nftTokenId;
+        address nftContractAddress;
+        uint bettingPrice;
+        bool activeLottery;
+        address[] players;
+        uint lotteryBalance;
+        address beneficiaryAddress;
+        address lotteryWinner;
+        uint startDate;
+    }
+
+    event SingleLottery (
+        address nftOwner,
+        uint nftTokenId,
+        address nftContractAddress,
+        uint bettingPrice,
+        bool activeLottery,
+        address beneficiaryAddress,
+        uint startDate
+    );
+
     event BuyTicket (
         address player,
-        uint lotteryBalance 
+        uint lotteryBalance
     );
 
     event PickTheWinner (
         address currentWinner,
+        bool activeLottery,
+        address nftContractAddress,
         uint awardBalance
     );
 
+    mapping(uint => singleLottery) historicLottery;
 
     // Funtion override to allow contract to recieve NFTs
     function onERC721Received(address, address, uint256, bytes memory) public virtual override returns(bytes4) {
@@ -91,37 +99,64 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
         s_randomWords = randomWords;
     }
 
-    //Función buy ticket
-    //Now -> msg.value = VALUE in Remix
-    //onClick from the Front msg.value = 0.1 ether
-    //We have to set different times for both function:
-    //1st - requestRandomWords() it takes like a 30 minutes to deliver de numer
-    //2nd - buyTicket() 
-    function buyTicket() public payable {
-        require(msg.value == lotteryPrice, "To participate, please fund the address with enough ether to buy the ticket.");
-        players.push(payable(msg.sender));
-        lotteryBalance = lotteryBalance + lotteryPrice;
+    //Start lottery function.
+    //Creates an instance from singleLottery
+    function startLottery (uint _tokenId, address _nftContractAddress, uint _bettingPrice, address _beneficiaryAddress) public returns (bytes4) {
+        IERC721 nftContract = IERC721(_nftContractAddress);
+        nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
 
-        emit BuyTicket(msg.sender, lotteryBalance);
+        singleLottery storage newLottery = historicLottery[lotteryId.current()];
+        newLottery.nftOwner = msg.sender;
+        newLottery.nftTokenId = _tokenId;
+        newLottery.nftContractAddress = _nftContractAddress;
+        newLottery.bettingPrice = _bettingPrice;
+        newLottery.activeLottery = true;
+        newLottery.lotteryBalance = 0;
+        newLottery.beneficiaryAddress = _beneficiaryAddress;
+        newLottery.startDate = block.timestamp;
+
+        emit SingleLottery (msg.sender, _tokenId, _nftContractAddress, _bettingPrice, true, _beneficiaryAddress, block.timestamp);
+
+        lotteryId.increment();
+
+        return this.onERC721Received.selector;
+    }
+
+
+    //Buy a ticket for an especific NFT lottery
+    function buyTicket(uint _lotteryId) public payable {
+        singleLottery storage l = historicLottery[_lotteryId];
+        require(msg.value == l.bettingPrice, "To participate, please add the require amount.");
+        l.players.push(payable(msg.sender));
+        l.lotteryBalance = l.lotteryBalance + l.bettingPrice;
+
+        emit BuyTicket(msg.sender, l.lotteryBalance);
     }
 
     //Función pick the winner:
     //Receives the number of ChainLink, s_randomWords[0], and adapts to number of players
     //0 =<  winner number =< number of players
-    function pickTheWinner() public onlyOwner {
-        uint index = s_randomWords[0] % players.length;
-        console.log (index);
-        currentWinner = players[index];
+    function pickTheWinner(uint _lotteryId) public {
+        singleLottery storage l = historicLottery[_lotteryId];
+        uint index = s_randomWords[0] % l.players.length;
+        l.lotteryWinner = l.players[index];
 
         //Transfer 80% of lotteryBalance to the winner and reset.
-        uint awardBalance = (lotteryBalance * 80) / 100;
-        (bool success, ) = payable(players[index]).call{value: awardBalance}("");
+        uint awardBalance = (l.lotteryBalance * 80) / 100;
+        (bool success, ) = payable(l.lotteryWinner).call{value: awardBalance}("");
         require(success, "failed");
 
-        emit PickTheWinner(players[index], awardBalance);
+        //TRANSFER THE NFT FROM CONTRACT TO WINNER:
+        IERC721 nftContract = IERC721(l.nftContractAddress);
+        nftContract.safeTransferFrom(address(this), l.lotteryWinner, l.nftTokenId);
 
-        lotteryBalance = 0 ether;
-        players = new address payable[](0);
+
+        l.activeLottery = false;
+        l.lotteryBalance = 0 ether;
+
+        emit PickTheWinner(l.lotteryWinner, l.activeLottery, l.nftContractAddress, awardBalance);
+
+    }
 
 
         //NFTLotteryPrize memory prize = PREMIO
@@ -131,44 +166,37 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
 
         // Transfer NFT from this contract to the winner
         //nftContract.safeTransferFrom(address(this), players[index], prize.tokenId);
-    }
+    ///}
 
 
     // Starts a Lottery. User should have already given access to the contract to allow the transfer of the NFT
     // Recieves the NFT Id and the contract of the NFT.
-    function startLottery(uint256 _tokenId, address _nftContractAddress) public returns (bytes4){
-        IERC721 nftContract = IERC721(_nftContractAddress);
-        nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
+    ///function startLottery(uint256 _tokenId, address _nftContractAddress) public returns (bytes4){
+        ///IERC721 nftContract = IERC721(_nftContractAddress);
+        ///nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
         // Initialize the lottery over here
         // prize = NFTLotteryPrize(_nftContractAddress, _tokenId);
         // lotteryId = _lotteryCounter.current();
 
         //
-        _lotteryCounter.increment();
+        ///_lotteryCounter.increment();
 
         // Return value to allow the ERC721 openzeppelin implementation to fulfill the NFT transaction.
-        return this.onERC721Received.selector;
-    }
+        ///return this.onERC721Received.selector;
+   /// }
+
 
     //GET FUNCTIONS:
-    //Contract balance:
+
+    //Each lottery info
+    function getLottery (uint _lotteryId) public view returns (address, address, uint, bool, address[] memory, uint, address, uint) {
+        singleLottery storage l = historicLottery[_lotteryId];
+        return (l.nftOwner, l.nftContractAddress, l.bettingPrice, l.activeLottery, l.players, l.lotteryBalance, l.lotteryWinner, l.startDate);
+    }
+
+    //Contract Balance
     function getContractBalance() public view returns(uint){
     return address(this).balance;
-    }
-
-    //Current lottery balance:
-    function getLotteryBalance() public view returns(uint) {
-        return lotteryBalance;
-    }
-
-    //Current winner:
-    function getCurrentWinner() public view returns(address) {
-        return currentWinner;
-    }
-
-    //Lottery History:
-    function getHistoryWinner(uint _lotteryId) public view returns(address) {
-        return lotteryHistory[_lotteryId];
     }
 
 }
