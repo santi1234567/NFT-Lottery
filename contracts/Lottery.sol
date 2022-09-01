@@ -126,7 +126,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
     //Buy a ticket for an especific NFT lottery
     function buyTicket(uint _lotteryId) public payable {
         singleLottery storage l = historicLottery[_lotteryId];
-        require(msg.value == l.bettingPrice, "To participate, please add the require amount.");
+        require(msg.value == l.bettingPrice, "To participate, please fund the address with enough ether to buy the ticket.");
         l.players.push(payable(msg.sender));
         l.lotteryBalance = l.lotteryBalance + l.bettingPrice;
 
