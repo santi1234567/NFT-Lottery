@@ -181,18 +181,21 @@ describe("Lottery Contract", () => {
                 // Approve contract to be able to transfer the NFT
                 await nftContract.approve(lotteryContract.address, nftId);
                 // Start lottery
-                await lotteryContract.startLottery(nftId, nftContract.address);
-                
-                // Buy tickets (owner)
-                //await lotteryContract.buyTicket();
-                //await lotteryContract.buyTicket();
-                //await lotteryContract.buyTicket();
-                //await lotteryContract.buyTicket();
-                //await lotteryContract.buyTicket();
-                
-                // TODO: Check if tickets were bought correctly
-                expect(true).to.equal(false);
-        
+                const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
+                const lotteryId = 0;
+
+                // Buy ticket (owner)
+                await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});    
+                await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});        
+                await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});        
+                await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});        
+                await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});        
+
+                [ , , , , players, lotteryBalance, , ] = await lotteryContract.getLottery(lotteryId);
+                expect(players).to.eql([owner.address, owner.address,owner.address,owner.address,owner.address]);  
+                expect(await ethers.provider.getBalance(lotteryContract.address)).to.equal(ethers.utils.parseEther("0.5"));   
+                expect(lotteryBalance).to.equal(ethers.utils.parseEther("0.5")); 
             });   
         
             it("Tries to buy a ticket for a lottery that has already ended and fails", async () => {
@@ -205,7 +208,10 @@ describe("Lottery Contract", () => {
                 // Approve contract to be able to transfer the NFT
                 await nftContract.approve(lotteryContract.address, nftId);
                 // Start lottery
-                await lotteryContract.startLottery(nftId, nftContract.address);
+                const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
+                const lotteryId = 0;
+
         
                 // TODO: End lottery
         
