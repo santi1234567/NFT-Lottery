@@ -129,7 +129,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
         require(_lotteryId < lotteryId.current(), "The lottery Id given does not correspond to an existing lottery.");
         singleLottery storage l = historicLottery[_lotteryId];
         require(l.activeLottery, "The lottery Id given corresponds to a lottery that has already ended.");      
-        require(msg.value == l.bettingPrice, "To participate, please fund the address with enough ether to buy the ticket.");
+        require(msg.value == l.bettingPrice,  "To participate, please add the required amount.");      
         l.players.push(payable(msg.sender));
         l.lotteryBalance = l.lotteryBalance + l.bettingPrice;
 
