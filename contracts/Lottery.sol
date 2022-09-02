@@ -126,8 +126,9 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
 
     //Buy a ticket for an especific NFT lottery
     function buyTicket(uint _lotteryId) public payable {
-        // require lottery to exist
+        require(_lotteryId < lotteryId.current(), "The lottery Id given does not correspond to an existing lottery.");
         singleLottery storage l = historicLottery[_lotteryId];
+        require(l.activeLottery, "The lottery Id given corresponds to a lottery that has already ended.");      
         require(msg.value == l.bettingPrice, "To participate, please fund the address with enough ether to buy the ticket.");
         l.players.push(payable(msg.sender));
         l.lotteryBalance = l.lotteryBalance + l.bettingPrice;
@@ -139,8 +140,9 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
     //Receives the number of ChainLink, s_randomWords[0], and adapts to number of players
     //0 =<  winner number =< number of players
     function pickTheWinner(uint _lotteryId) public {
-        // require lottery to exist
+        require(_lotteryId < lotteryId.current(), "The lottery Id given does not correspond to an existing lottery.");
         singleLottery storage l = historicLottery[_lotteryId];
+        require(l.activeLottery, "The lottery Id given corresponds to a lottery that has already ended.");      
         uint index = s_randomWords[0] % l.players.length;
         l.lotteryWinner = l.players[index];
 
@@ -193,7 +195,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
 
     //Each lottery info
     function getLottery (uint _lotteryId) public view returns (address, address, uint, bool, address[] memory, uint, address, uint) {
-        // require lottery to exist
+        require(_lotteryId < lotteryId.current(), "The lottery Id given does not correspond to an existing lottery.");
         singleLottery storage l = historicLottery[_lotteryId];
         return (l.nftOwner, l.nftContractAddress, l.bettingPrice, l.activeLottery, l.players, l.lotteryBalance, l.lotteryWinner, l.startDate);
     }
