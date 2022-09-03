@@ -8,17 +8,20 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
+import "@chainlink/contracts/src/v0.8/KeeperCompatible.sol";
 
 import "hardhat/console.sol";
 
 
-contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
+contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver, KeeperCompatibleInterface {
     using Counters for Counters.Counter;
     VRFCoordinatorV2Interface COORDINATOR;
 
     //VRF Variables
     //s_subscriptionId is the Id into Chainlink VRF. Associated to a Metamask account
     uint64 s_subscriptionId;
+    bool private s_pendingLotteryEnd;
+    uint256 pendingLotteriesCount;
     //Goerli values
     address vrfCoordinator = 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D;
     bytes32 keyHash = 0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15;
@@ -27,7 +30,6 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
     //numWords = number of random numbers generated. Goes into array s_randomWords
     uint32 numWords =  2;
     uint256[] public s_randomWords;
-    uint256 public s_requestId;
 
 
     constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
@@ -82,7 +84,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
 
     //VRF funtions
     //We need funds (LINK) into the  s_subscriptionId -> revert
-    function requestRandomWords() external onlyOwner {
+    /* function requestRandomWords() external onlyOwner {
         s_requestId = COORDINATOR.requestRandomWords(
         keyHash,
         s_subscriptionId,
@@ -90,13 +92,19 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
         callbackGasLimit,
         numWords
     );
-    }
+    }*/
 
     function fulfillRandomWords(
         uint256, /* requestId */
         uint256[] memory randomWords
     ) internal override {
-        s_randomWords = randomWords;
+        uint256 word = 0;
+        for (uint256 i = 0; i < lotteryId.current(); i++) {
+            if(_canEndLottery(i)){
+                endLottery(i, randomWords[word] % historicLottery[i].players.length);
+                word++;
+            }
+        }
     }
 
     //Start lottery function.
@@ -162,7 +170,83 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
         emit PickTheWinner(l.lotteryWinner, l.activeLottery, l.nftContractAddress, awardBalance);
 
     }
+    // End Lottery
 
+    function endLottery(uint _lotteryId, uint _winnerIndex) public {
+        require(_lotteryId < lotteryId.current(), "The lottery Id given does not correspond to an existing lottery.");
+        singleLottery storage l = historicLottery[_lotteryId];
+        require(l.activeLottery, "The lottery Id given corresponds to a lottery that has already ended.");      
+        l.lotteryWinner = l.players[_winnerIndex];
+
+        //Transfer 80% of lotteryBalance to the winner and reset.
+        uint awardBalance = (l.lotteryBalance * 80) / 100;
+        (bool success, ) = payable(l.lotteryWinner).call{value: awardBalance}("");
+        require(success, "Transaction Failed");
+
+        //TRANSFER THE NFT FROM CONTRACT TO WINNER:
+        IERC721 nftContract = IERC721(l.nftContractAddress);
+        nftContract.safeTransferFrom(address(this), l.lotteryWinner, l.nftTokenId);
+
+
+        l.activeLottery = false;
+        l.lotteryBalance = 0 ether;
+
+        // emitir evento emit endLotteryEvent(l.lotteryWinner, l.activeLottery, l.nftContractAddress, awardBalance);
+
+    }
+
+    function _canEndLottery(uint256 _lotteryId) internal view returns (bool) {
+        if (s_pendingLotteryEnd) {
+            return false;
+        }
+        if (!historicLottery[_lotteryId].activeLottery) {
+            return false;
+        }
+        if (historicLottery[_lotteryId].startDate /*+ tiempo de lotería*/ < block.timestamp) {
+            return false;
+        }
+        return true;
+    }
+
+    function requestWordsPendingLotteries() public returns (uint256 s_requestId) {
+        pendingLotteriesCount = 0;
+        for (uint256 i = 0; i < lotteryId.current(); i++) {
+            if(_canEndLottery(i)){
+                pendingLotteriesCount++;
+            }
+        } 
+        require(pendingLotteriesCount > 0, "There are no pending lotteries to be ended.");
+        s_requestId = COORDINATOR.requestRandomWords(
+            keyHash,
+            s_subscriptionId,
+            requestConfirmations,
+            callbackGasLimit,
+            numWords
+       );
+        s_pendingLotteryEnd = true;
+        // Emitir evento? emit BatchRevealRequested(requestId);
+    }
+
+
+    // KEEPERS
+
+    function checkUpkeep(bytes calldata)
+        external
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory)
+    {
+        for (uint256 i = 0; i < lotteryId.current(); i++) {
+            if(_canEndLottery(i)){
+                upkeepNeeded = true;
+                break;
+            }
+        }     
+    }
+
+    function performUpkeep(bytes calldata) external override {
+        requestWordsPendingLotteries();
+    }
 
         //NFTLotteryPrize memory prize = PREMIO
 
