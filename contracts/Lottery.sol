@@ -21,7 +21,7 @@ contract Lottery is
 {
 
     using Counters for Counters.Counter;
-    bool private s_pendingLotteryEnd;
+    bool public s_pendingLotteryEnd;
 
     //VRF Variables
     VRFCoordinatorV2Interface COORDINATOR;
@@ -35,6 +35,10 @@ contract Lottery is
     uint32 private constant numWords = 1;
 
 
+    // Events
+
+    event PendingLotteriesWordsRequested(uint256 requestId);
+    event EndLotteryEvent(uint256 lotteryId);
     uint256[] public s_randomWords;
 
 
@@ -55,7 +59,7 @@ contract Lottery is
         uint lotteryBalance;
         address beneficiaryAddress;
         address lotteryWinner;
-        uint startDate;
+        uint endDate;
     }
 
     event SingleLottery (
@@ -65,7 +69,7 @@ contract Lottery is
         uint bettingPrice,
         bool activeLottery,
         address beneficiaryAddress,
-        uint startDate
+        uint endDate
     );
 
     event BuyTicket (
@@ -123,8 +127,9 @@ contract Lottery is
 
     //Start lottery function.
     //Creates an instance from singleLottery
-    function startLottery (uint _tokenId, address _nftContractAddress, uint _bettingPrice, address _beneficiaryAddress) public returns (bytes4) {
+    function startLottery (uint _tokenId, address _nftContractAddress, uint _bettingPrice, address _beneficiaryAddress, uint256 _endDate) public returns (bytes4) {
         require(_bettingPrice > 0, "Betting price should be greater than zero.");
+        require(_endDate > block.timestamp, "End date should be later than the current timestamp");
         IERC721 nftContract = IERC721(_nftContractAddress);
         nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
 
@@ -136,9 +141,9 @@ contract Lottery is
         newLottery.activeLottery = true;
         newLottery.lotteryBalance = 0;
         newLottery.beneficiaryAddress = _beneficiaryAddress;
-        newLottery.startDate = block.timestamp;
+        newLottery.endDate = _endDate;
 
-        emit SingleLottery (msg.sender, _tokenId, _nftContractAddress, _bettingPrice, true, _beneficiaryAddress, block.timestamp);
+        emit SingleLottery (msg.sender, _tokenId, _nftContractAddress, _bettingPrice, true, _beneficiaryAddress, _endDate);
 
         lotteryIdCounter.increment();
 
@@ -178,7 +183,7 @@ contract Lottery is
         l.activeLottery = false;
         l.lotteryBalance = 0 ether;
 
-        // emitir evento emit endLotteryEvent(l.lotteryWinner, l.activeLottery, l.nftContractAddress, awardBalance);
+        emit EndLotteryEvent(_lotteryId);
 
     }
 
@@ -189,7 +194,7 @@ contract Lottery is
         if (!historicLottery[_lotteryId].activeLottery) {
             return false;
         }
-        if (historicLottery[_lotteryId].startDate /*+ tiempo de lotería*/ < block.timestamp) {
+        if (historicLottery[_lotteryId].endDate > block.timestamp) {
             return false;
         }
         return true;
@@ -207,17 +212,17 @@ contract Lottery is
             numWords
        );
         s_pendingLotteryEnd = true;
-        // Emitir evento? emit BatchRevealRequested(requestId);
+        emit PendingLotteriesWordsRequested(s_requestId);
     }
 
 
     // KEEPERS
 
-    function checkUpkeep(bytes calldata)
+    function checkUpkeep(bytes calldata checkdata)
         external
         view
         override
-        returns (bool upkeepNeeded, bytes memory)
+        returns (bool upkeepNeeded, bytes memory performData)
     {
         for (uint256 i = 0; i < lotteryIdCounter.current(); i++) {
             if(_canEndLottery(i)){
@@ -225,6 +230,7 @@ contract Lottery is
                 break;
             }
         }     
+        performData = checkdata;
     }
 
     function performUpkeep(bytes calldata) external override {
@@ -237,7 +243,7 @@ contract Lottery is
     function getLottery (uint _lotteryId) public view returns (address, address, uint, bool, address[] memory, uint, address, uint) {
         require(_lotteryId < lotteryIdCounter.current(), "The lottery Id given does not correspond to an existing lottery.");
         singleLottery storage l = historicLottery[_lotteryId];
-        return (l.nftOwner, l.nftContractAddress, l.bettingPrice, l.activeLottery, l.players, l.lotteryBalance, l.lotteryWinner, l.startDate);
+        return (l.nftOwner, l.nftContractAddress, l.bettingPrice, l.activeLottery, l.players, l.lotteryBalance, l.lotteryWinner, l.endDate);
     }
 
     //Contract Balance
