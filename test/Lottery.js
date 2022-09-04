@@ -1,5 +1,22 @@
 const { expect } = require("chai");
 
+let DEFAULT_LOTTERY_TIME = 180; // seconds
+
+async function endPendingLotteries(
+    Lottery,
+    VRFCoordinatorV2Mock
+) {
+    const tx = await Lottery.requestWordsPendingLotteries(); 
+    const { events } = await tx.wait();
+    const requestEvent = events?.find((e) => e.event === "PendingLotteriesWordsRequested");
+    const requestId = requestEvent?.args?.requestId;
+  
+    return VRFCoordinatorV2Mock.fulfillRandomWords(
+      requestId,
+      Lottery.address
+    );
+}
+
 describe("Lottery Contract", () => {
     async function testSetup() {
         // Get the ContractFactory and Signers here.
@@ -34,10 +51,12 @@ describe("Lottery Contract", () => {
                 await nftContract.safeMint();
                 const nftId = 0;
                 ownerOfMinted = await nftContract.ownerOf(nftId);
-                
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime;
                 const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
                 // Start lottery
-                await expect(lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address)).to.be.revertedWith(
+                await expect(lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address, endTime)).to.be.revertedWith(
                     "ERC721: caller is not token owner nor approved"
                 );
         
@@ -51,15 +70,41 @@ describe("Lottery Contract", () => {
                 const nftId = 0;
                 ownerOfMinted = await nftContract.ownerOf(nftId);
 
-                 // Approve contract to be able to transfer the NFT
-                 await nftContract.approve(lotteryContract.address, nftId);
-       
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime;      
 
                 const bettingPrice = ethers.utils.parseEther("0"); // 0 ether
 
                 // Ticket price = 0
-                await expect(lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address)).to.be.revertedWith(
+                await expect(lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address, endTime)).to.be.revertedWith(
                     "Betting price should be greater than zero."
+                );   
+        
+            });
+
+            
+            it("Tries to start a lottery with timestamp lower than actual", async () => {
+                const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+                ownerOfMinted = await nftContract.ownerOf(nftId);
+
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                const currentTimestamp = Math.floor(Date.now() / 1000)-1000;
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime;      
+
+                const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
+
+                // Ticket price = 0.1
+                await expect(lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address, endTime)).to.be.revertedWith(
+                    "End date should be later than the current timestamp"
                 );   
         
             });
@@ -76,7 +121,10 @@ describe("Lottery Contract", () => {
   
                 // Start lottery
                 const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
-                const tx = await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime; 
+                const tx = await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address, endTime);
                 const lotteryId = 0;
                 const timestamp = (await ethers.provider.getBlock(tx.blockNumber)).timestamp;
                 ownerOfMinted = await nftContract.ownerOf(nftId);           
@@ -92,7 +140,7 @@ describe("Lottery Contract", () => {
                         [], 
                         ethers.utils.parseEther("0"), 
                         ethers.constants.AddressZero, 
-                        ethers.BigNumber.from( timestamp)
+                        ethers.BigNumber.from(endTime)
                     ]);
             });
         });
@@ -109,7 +157,10 @@ describe("Lottery Contract", () => {
                 await nftContract.approve(lotteryContract.address, nftId);
                 // Start lottery
                 const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
-                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime; 
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address, endTime);
                 const lotteryId = 0;
                 // Buy ticket
                 await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});
@@ -131,7 +182,10 @@ describe("Lottery Contract", () => {
                 await nftContract.approve(lotteryContract.address, nftId);
                 // Start lottery
                 const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
-                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime; 
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address, endTime);
                 const lotteryId = 0;
                 // Buy ticket        
                 await expect(lotteryContract.buyTicket(lotteryId, { value: ethers.utils.parseEther("0.12")})).to.be.revertedWith(
@@ -151,8 +205,10 @@ describe("Lottery Contract", () => {
                 await nftContract.approve(lotteryContract.address, nftId);
                 // Start lottery
                 const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
-                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
-                const lotteryId = 0;
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime; 
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address, endTime);                const lotteryId = 0;
 
                 // Buy ticket (owner)
                 await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});
@@ -182,7 +238,10 @@ describe("Lottery Contract", () => {
                 await nftContract.approve(lotteryContract.address, nftId);
                 // Start lottery
                 const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
-                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime; 
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address, endTime);                
                 const lotteryId = 0;
 
                 // Buy ticket (owner)
@@ -209,7 +268,10 @@ describe("Lottery Contract", () => {
                 await nftContract.approve(lotteryContract.address, nftId);
                 // Start lottery
                 const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
-                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address);
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime; 
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address, endTime);
                 const lotteryId = 0;
 
         
@@ -222,6 +284,48 @@ describe("Lottery Contract", () => {
         //          "<ERROR MESSAGE>"
                 //);
             });
+        });
+        describe("Ending Lottery Tests", () => {
+            it("Ends Lottery", async () => {
+                const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+        
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                // Start lottery
+                const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
+                const currentTimestamp = Math.floor(Date.now() / 1000);
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime; 
+                tx = await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, owner.address, endTime);
+                const lotteryId = 0;
+
+                // Buy ticket (owner)
+                await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});
+        
+                // Buy ticket (addr1)
+                await lotteryContract.connect(addr1).buyTicket(lotteryId, { value: bettingPrice});
+
+                // Buy ticket (addr2)
+                await lotteryContract.connect(addr2).buyTicket(lotteryId, { value: bettingPrice});
+                let end;
+                do {
+                    end = await lotteryContract.checkUpkeep("0x0000000000000000000000000000000000000000000000000000006d6168616d");
+                    await network.provider.send("evm_increaseTime", [10])
+                    await network.provider.send("evm_mine")
+                } while (!end[0]);
+                await expect(endPendingLotteries(lotteryContract, mockVRFContract))
+                    .to.emit(lotteryContract, "EndLotteryEvent")
+                    .withArgs(lotteryId);
+                console.log(await lotteryContract.getLottery(lotteryId));
+                /*
+                expect(players).to.eql([owner.address, addr1.address, addr2.address]);  
+                expect(await ethers.provider.getBalance(lotteryContract.address)).to.equal(ethers.utils.parseEther("0.3"));   
+                expect(lotteryBalance).to.equal(ethers.utils.parseEther("0.3"));   */
+            });  
         });
     
 
