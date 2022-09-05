@@ -30,7 +30,6 @@ contract Lottery is
     // 
 
     bool public s_pendingLotteryEnd;
-    uint256[] public s_randomWords;
 
     // VRF CONSTANTS & IMMUTABLE
 
@@ -258,7 +257,13 @@ contract Lottery is
 
     //Contract Balance
     function getContractBalance() public view returns(uint){
-    return address(this).balance;
+        return address(this).balance;
+    }
+    
+    // Get latest lottery Id
+
+    function getLotteryCount() public view returns(uint256) {
+        return lotteryIdCounter.current();
     }
 
 }
