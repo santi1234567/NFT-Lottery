@@ -1,8 +1,8 @@
 // Goerli Constants
-const VRF_COORDINATOR_V2 = 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D
-const VRF_GAS_LANE = 0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15;
-const VRF_CALLBACK_GAS_LIMIT = 100000;
-const VRF_SUBSCRIPTION_ID = 1;
+const VRF_COORDINATOR_V2 = "0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D";
+const VRF_GAS_LANE = "0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15";
+const VRF_CALLBACK_GAS_LIMIT = 1000000;
+const VRF_SUBSCRIPTION_ID = 1072;
 async function main() {
     const [deployer] = await ethers.getSigners();
   
