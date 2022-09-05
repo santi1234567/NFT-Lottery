@@ -286,7 +286,7 @@ describe("Lottery Contract", () => {
             });
         });
         describe("Ending Lottery Tests", () => {
-            it("Ends Lottery", async () => {
+            it("Keeper should request the ending of a lottery.", async () => {
                 const { lotteryContract, nftContract, mockVRFContract, owner, addr1, addr2 } = await testSetup({});
         
                 // Mint an NFT
