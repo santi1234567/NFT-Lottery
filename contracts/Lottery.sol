@@ -20,31 +20,41 @@ contract Lottery is
     KeeperCompatibleInterface 
 {
 
+    // Counters
+
     using Counters for Counters.Counter;
+
+    // 
+
     bool public s_pendingLotteryEnd;
+    uint256[] public s_randomWords;
 
-    //VRF Variables
-    VRFCoordinatorV2Interface COORDINATOR;
-    //s_subscriptionId is the Id into Chainlink VRF. Associated to a Metamask account
-    uint64 private immutable s_subscriptionId;
-    //Goerli values
-    address private constant vrfCoordinator = 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D;
-    bytes32 private constant keyHash = 0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15;
-    uint32 private constant callbackGasLimit = 100000;
-    uint16 private constant requestConfirmations = 3;
-    uint32 private constant numWords = 1;
+    // VRF CONSTANTS & IMMUTABLE
 
+    uint16 private constant VRF_REQUEST_CONFIRMATIONS = 3;
+    uint32 private constant VRF_NUM_WORDS = 1;
+
+    VRFCoordinatorV2Interface private immutable VRF_COORDINATOR_V2;
+    uint64 private immutable VRF_SUBSCRIPTION_ID;
+    bytes32 private immutable VRF_GAS_LANE;
+    uint32 private immutable VRF_CALLBACK_GAS_LIMIT;
 
     // Events
 
     event PendingLotteriesWordsRequested(uint256 requestId);
     event EndLotteryEvent(uint256 lotteryId);
-    uint256[] public s_randomWords;
 
 
-    constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
-        COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
-        s_subscriptionId = subscriptionId;
+    constructor(
+        address _vrfCoordinatorV2,
+        uint64 _vrfSubscriptionId,
+        bytes32 _vrfGasLane,
+        uint32 _vrfCallbackGasLimit
+    ) VRFConsumerBaseV2(_vrfCoordinatorV2) {
+        VRF_COORDINATOR_V2 = VRFCoordinatorV2Interface(_vrfCoordinatorV2);
+        VRF_SUBSCRIPTION_ID = _vrfSubscriptionId;
+        VRF_GAS_LANE = _vrfGasLane;
+        VRF_CALLBACK_GAS_LIMIT = _vrfCallbackGasLimit;
     }
 
     Counters.Counter lotteryIdCounter;
@@ -204,13 +214,13 @@ contract Lottery is
         /*
         VER SI HACE FALTA VERIFICAR ALGO ACA
 */
-        s_requestId = COORDINATOR.requestRandomWords(
-            keyHash,
-            s_subscriptionId,
-            requestConfirmations,
-            callbackGasLimit,
-            numWords
-       );
+        s_requestId = VRF_COORDINATOR_V2.requestRandomWords(
+            VRF_GAS_LANE,
+            VRF_SUBSCRIPTION_ID,
+            VRF_REQUEST_CONFIRMATIONS,
+            VRF_CALLBACK_GAS_LIMIT,
+            VRF_NUM_WORDS
+        );
         s_pendingLotteryEnd = true;
         emit PendingLotteriesWordsRequested(s_requestId);
     }
