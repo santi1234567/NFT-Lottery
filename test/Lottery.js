@@ -142,18 +142,20 @@ describe("Lottery Contract", () => {
                 ownerOfMinted = await nftContract.ownerOf(nftId);           
                 await expect(ownerOfMinted).to.equal(lotteryContract.address); 
                  
-                lottery = await lotteryContract.getLottery(lotteryId);
-                await expect(lottery).to.eql(
+                const lottery = (await lotteryContract.getLottery(lotteryId));
+                console.log(lottery)
+                await expect(lottery.slice(0, lottery.length)).to.eql(
                     [
-                        owner.address, 
+                        owner.address,
                         nftContract.address,
                         bettingPrice, 
                         true, 
                         [], 
                         ethers.utils.parseEther("0"), 
+                        owner.address,
                         ethers.constants.AddressZero, 
                         ethers.BigNumber.from(endTime),
-                        owner.address
+                        ethers.BigNumber.from(nftId) 
                     ]);
             });
         });
@@ -276,7 +278,7 @@ describe("Lottery Contract", () => {
         
         });
         describe("Ending Lottery Tests", () => {
-            it("Keeper should request the ending of a lottery.", async () => {
+            it("Keeper should request the ending of a lottery", async () => {
                 const { lotteryContract, nftContract, vrfCoordinatorV2Mock, owner, addr1, addr2 } = await testSetup({});
         
                 // Mint an NFT
@@ -311,7 +313,7 @@ describe("Lottery Contract", () => {
                 await expect(lotteryContract.requestWordsPendingLotteries())
                     .to.emit(lotteryContract, "PendingLotteriesWordsRequested");
             });  
-            it("Keeper should end a pending lottery.", async () => {
+            it("Keeper should end a pending lottery", async () => {
                 const { lotteryContract, nftContract, vrfCoordinatorV2Mock, owner, addr1, addr2, addr3 } = await testSetup({});
         
                 // Mint an NFT
@@ -349,8 +351,8 @@ describe("Lottery Contract", () => {
                 lottery = await lotteryContract.getLottery(lotteryId);
                 const activeLottery = lottery[3];
                 const lotteryBalance = lottery[5];
-                const lotteryWinner = lottery[6];
-                const beneficiaryAddress = lottery[8]; 
+                const lotteryWinner = lottery[7];
+                const beneficiaryAddress = lottery[6]; 
                 expect(activeLottery).to.equal(false);  
                 expect(await ethers.provider.getBalance(beneficiaryAddress)).to.equal(ethers.utils.parseEther("10000.285"));   
                 expect(lotteryBalance).to.equal(ethers.utils.parseEther("0"));   
