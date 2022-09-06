@@ -63,7 +63,6 @@ contract Lottery is
 
     struct singleLottery {
         address nftOwner;
-        uint nftTokenId;
         address nftContractAddress;
         uint bettingPrice;
         bool activeLottery;
@@ -72,6 +71,7 @@ contract Lottery is
         address beneficiaryAddress;
         address lotteryWinner;
         uint endDate;
+        uint nftTokenId;
     }
 
     event SingleLottery (
@@ -249,10 +249,10 @@ contract Lottery is
     //GET FUNCTIONS:
 
     //Each lottery info
-    function getLottery (uint _lotteryId) public view returns (address, address, uint, bool, address[] memory, uint, address, uint, address) {
+    function getLottery (uint _lotteryId) public view returns (singleLottery memory) {
         require(_lotteryId < lotteryIdCounter.current(), "The lottery Id given does not correspond to an existing lottery.");
         singleLottery storage l = historicLottery[_lotteryId];
-        return (l.nftOwner, l.nftContractAddress, l.bettingPrice, l.activeLottery, l.players, l.lotteryBalance, l.lotteryWinner, l.endDate, l.beneficiaryAddress);
+        return l;
     }
 
     //Contract Balance
