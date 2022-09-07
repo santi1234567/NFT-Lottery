@@ -1,5 +1,9 @@
 # NFT Lottery Marketplace | Platzi ETH Developer Program final challenge
 
+---
+
+### Description:
+
 Developed using solidity for smart contracts and hardhat for testing/deployment.
 
 The contract allows for users to publish NFT lotteries and buy tickets. Winners are chosen automatically utilizing an integration of Chainlink VRF and Keeper services.
