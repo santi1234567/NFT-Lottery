@@ -12,6 +12,12 @@ import "@chainlink/contracts/src/v0.8/KeeperCompatible.sol";
 
 import "hardhat/console.sol";
 
+/* TODO:
+- Add require to requestWordsPendingLotteries().
+- Create function onlyOwner to retrieve the contract fee.
+
+*/
+
 
 contract Lottery is 
     Ownable, 
@@ -20,7 +26,7 @@ contract Lottery is
     KeeperCompatibleInterface 
 {
 
-    // Contract fee %
+    // Contract fee % 
     uint256 public constant CONTRACT_FEE = 5;
 
     // Counters
@@ -89,12 +95,6 @@ contract Lottery is
         uint lotteryBalance
     );
 
-    event PickTheWinner (
-        address currentWinner,
-        bool activeLottery,
-        address nftContractAddress,
-        uint awardBalance
-    );
 
     mapping(uint => singleLottery) historicLottery;
 
@@ -105,16 +105,7 @@ contract Lottery is
 
 
     //VRF funtions
-    //We need funds (LINK) into the  s_subscriptionId -> revert
-    /* function requestRandomWords() external onlyOwner {
-        s_requestId = COORDINATOR.requestRandomWords(
-        keyHash,
-        s_subscriptionId,
-        requestConfirmations,
-        callbackGasLimit,
-        numWords
-    );
-    }*/
+    //Consumes (LINK) funds. Is called by VRF coordinator once the random word is created. Picks a winner by hashing the random word with the token Id and the contact address of the token.
 
     function fulfillRandomWords(
         uint256, /* requestId */
@@ -139,6 +130,12 @@ contract Lottery is
 
     //Start lottery function.
     //Creates an instance from singleLottery
+
+    // _tokenId: Id of NFT to be used in lottery.
+    // _nftContractAddress: Address of the contract of the NFT
+    // _bettingPrice: Price of a single lottery ticket. Expressed in WEI
+    // _beneficiaryAddress: Address of the wallet/contract that will recieve automatically the gains of the lottery.
+    // _endDate: Timestamp for the lottery to be ended (in seconds).
     function startLottery (uint _tokenId, address _nftContractAddress, uint _bettingPrice, address _beneficiaryAddress, uint256 _endDate) public returns (bytes4) {
         require(_bettingPrice > 0, "Betting price should be greater than zero.");
         require(_endDate > block.timestamp, "End date should be later than the current timestamp");
@@ -162,6 +159,7 @@ contract Lottery is
     }
 
     //Buy a ticket for an especific NFT lottery
+
     function buyTicket(uint _lotteryId) public payable {
         require(_lotteryId < lotteryIdCounter.current(), "The lottery Id given does not correspond to an existing lottery.");
         singleLottery storage l = historicLottery[_lotteryId];
@@ -173,7 +171,7 @@ contract Lottery is
         emit BuyTicket(msg.sender, l.lotteryBalance);
     }
 
-    // End Lottery
+    // End Lottery. Recieves the Id of the lottery and the index of the winner chosen from the players array.
 
     function _endLottery(uint _lotteryId, uint _winnerIndex) internal {
         require(_lotteryId < lotteryIdCounter.current(), "The lottery Id given does not correspond to an existing lottery.");
@@ -196,6 +194,26 @@ contract Lottery is
         nftContract.safeTransferFrom(address(this), l.lotteryWinner, l.nftTokenId);
     }
 
+
+    // Requests VRF coordinator to give a random word.
+
+    function requestWordsPendingLotteries() public returns (uint256 s_requestId) {
+        /*
+        TODO: check if any additional verification is needed. e.g. Any user could request words at any given time without limitation.
+        */
+        s_requestId = VRF_COORDINATOR_V2.requestRandomWords(
+            VRF_GAS_LANE,
+            VRF_SUBSCRIPTION_ID,
+            VRF_REQUEST_CONFIRMATIONS,
+            VRF_CALLBACK_GAS_LIMIT,
+            VRF_NUM_WORDS
+        );
+        s_pendingLotteryEnd = true;
+        emit PendingLotteriesWordsRequested(s_requestId);
+    }
+
+    // Checks if the lottery with Id _lotteryId can be ended.
+
     function _canEndLottery(uint256 _lotteryId) internal view returns (bool) {
         if (s_pendingLotteryEnd) {
             return false;
@@ -209,23 +227,10 @@ contract Lottery is
         return true;
     }
 
-    function requestWordsPendingLotteries() public returns (uint256 s_requestId) {
-        /*
-        VER SI HACE FALTA VERIFICAR ALGO ACA
-*/
-        s_requestId = VRF_COORDINATOR_V2.requestRandomWords(
-            VRF_GAS_LANE,
-            VRF_SUBSCRIPTION_ID,
-            VRF_REQUEST_CONFIRMATIONS,
-            VRF_CALLBACK_GAS_LIMIT,
-            VRF_NUM_WORDS
-        );
-        s_pendingLotteryEnd = true;
-        emit PendingLotteriesWordsRequested(s_requestId);
-    }
+    // KEEPER FUNCTIONS
 
 
-    // KEEPERS
+    // Checks if there is any lottery which should be ended. Checkdata is currently not used.
 
     function checkUpkeep(bytes calldata checkdata)
         external
@@ -241,6 +246,9 @@ contract Lottery is
         }     
         performData = checkdata;
     }
+
+
+    // Called by keeper once checkUpkeep returns true
 
     function performUpkeep(bytes calldata) external override {
         requestWordsPendingLotteries();
