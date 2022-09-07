@@ -8,38 +8,67 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
+import "@chainlink/contracts/src/v0.8/KeeperCompatible.sol";
 
 import "hardhat/console.sol";
 
+/* TODO:
+- Add require to requestWordsPendingLotteries().
+- Create function onlyOwner to retrieve the contract fee.
 
-contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
+*/
+
+
+contract Lottery is 
+    Ownable, 
+    VRFConsumerBaseV2, 
+    IERC721Receiver, 
+    KeeperCompatibleInterface 
+{
+
+    // Contract fee % 
+    uint256 public constant CONTRACT_FEE = 5;
+
+    // Counters
+
     using Counters for Counters.Counter;
-    VRFCoordinatorV2Interface COORDINATOR;
 
-    //VRF Variables
-    //s_subscriptionId is the Id into Chainlink VRF. Associated to a Metamask account
-    uint64 s_subscriptionId;
-    //Goerli values
-    address vrfCoordinator = 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D;
-    bytes32 keyHash = 0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15;
-    uint32 callbackGasLimit = 100000;
-    uint16 requestConfirmations = 3;
-    //numWords = number of random numbers generated. Goes into array s_randomWords
-    uint32 numWords =  2;
-    uint256[] public s_randomWords;
-    uint256 public s_requestId;
+    // 
+
+    bool public s_pendingLotteryEnd;
+
+    // VRF CONSTANTS & IMMUTABLE
+
+    uint16 private constant VRF_REQUEST_CONFIRMATIONS = 3;
+    uint32 private constant VRF_NUM_WORDS = 1;
+
+    VRFCoordinatorV2Interface private immutable VRF_COORDINATOR_V2;
+    uint64 private immutable VRF_SUBSCRIPTION_ID;
+    bytes32 private immutable VRF_GAS_LANE;
+    uint32 private immutable VRF_CALLBACK_GAS_LIMIT;
+
+    // Events
+
+    event PendingLotteriesWordsRequested(uint256 requestId);
+    event EndLotteryEvent(uint256 lotteryId);
 
 
-    constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
-        COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
-        s_subscriptionId = subscriptionId;
+    constructor(
+        address _vrfCoordinatorV2,
+        uint64 _vrfSubscriptionId,
+        bytes32 _vrfGasLane,
+        uint32 _vrfCallbackGasLimit
+    ) VRFConsumerBaseV2(_vrfCoordinatorV2) {
+        VRF_COORDINATOR_V2 = VRFCoordinatorV2Interface(_vrfCoordinatorV2);
+        VRF_SUBSCRIPTION_ID = _vrfSubscriptionId;
+        VRF_GAS_LANE = _vrfGasLane;
+        VRF_CALLBACK_GAS_LIMIT = _vrfCallbackGasLimit;
     }
 
-    Counters.Counter lotteryId;
+    Counters.Counter lotteryIdCounter;
 
     struct singleLottery {
         address nftOwner;
-        uint nftTokenId;
         address nftContractAddress;
         uint bettingPrice;
         bool activeLottery;
@@ -47,7 +76,8 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
         uint lotteryBalance;
         address beneficiaryAddress;
         address lotteryWinner;
-        uint startDate;
+        uint endDate;
+        uint nftTokenId;
     }
 
     event SingleLottery (
@@ -57,7 +87,7 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
         uint bettingPrice,
         bool activeLottery,
         address beneficiaryAddress,
-        uint startDate
+        uint endDate
     );
 
     event BuyTicket (
@@ -65,12 +95,6 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
         uint lotteryBalance
     );
 
-    event PickTheWinner (
-        address currentWinner,
-        bool activeLottery,
-        address nftContractAddress,
-        uint awardBalance
-    );
 
     mapping(uint => singleLottery) historicLottery;
 
@@ -81,32 +105,43 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
 
 
     //VRF funtions
-    //We need funds (LINK) into the  s_subscriptionId -> revert
-    function requestRandomWords() external onlyOwner {
-        s_requestId = COORDINATOR.requestRandomWords(
-        keyHash,
-        s_subscriptionId,
-        requestConfirmations,
-        callbackGasLimit,
-        numWords
-    );
-    }
+    //Consumes (LINK) funds. Is called by VRF coordinator once the random word is created. Picks a winner by hashing the random word with the token Id and the contact address of the token.
 
     function fulfillRandomWords(
         uint256, /* requestId */
         uint256[] memory randomWords
     ) internal override {
-        s_randomWords = randomWords;
+        s_pendingLotteryEnd = false;
+        for (uint256 i = 0; i < lotteryIdCounter.current(); i++) {
+            if(_canEndLottery(i)){
+                _endLottery(i, 
+                    uint256(
+                        keccak256(
+                            abi.encode(
+                                randomWords[0], 
+                                historicLottery[i].nftTokenId, 
+                                historicLottery[i].nftContractAddress)
+                        )
+                    ) % historicLottery[i].players.length
+                );
+            }
+        }
     }
 
     //Start lottery function.
     //Creates an instance from singleLottery
-    function startLottery (uint _tokenId, address _nftContractAddress, uint _bettingPrice, address _beneficiaryAddress) public returns (bytes4) {
+
+    // _tokenId: Id of NFT to be used in lottery.
+    // _nftContractAddress: Address of the contract of the NFT
+    // _bettingPrice: Price of a single lottery ticket. Expressed in WEI
+    // _beneficiaryAddress: Address of the wallet/contract that will recieve automatically the gains of the lottery.
+    // _endDate: Timestamp for the lottery to be ended (in seconds).
+    function startLottery (uint _tokenId, address _nftContractAddress, uint _bettingPrice, address _beneficiaryAddress, uint256 _endDate) public returns (bytes4) {
         require(_bettingPrice > 0, "Betting price should be greater than zero.");
+        require(_endDate > block.timestamp, "End date should be later than the current timestamp");
         IERC721 nftContract = IERC721(_nftContractAddress);
         nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
-
-        singleLottery storage newLottery = historicLottery[lotteryId.current()];
+        singleLottery storage newLottery = historicLottery[lotteryIdCounter.current()];
         newLottery.nftOwner = msg.sender;
         newLottery.nftTokenId = _tokenId;
         newLottery.nftContractAddress = _nftContractAddress;
@@ -114,19 +149,19 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
         newLottery.activeLottery = true;
         newLottery.lotteryBalance = 0;
         newLottery.beneficiaryAddress = _beneficiaryAddress;
-        newLottery.startDate = block.timestamp;
+        newLottery.endDate = _endDate;
 
-        emit SingleLottery (msg.sender, _tokenId, _nftContractAddress, _bettingPrice, true, _beneficiaryAddress, block.timestamp);
+        emit SingleLottery (msg.sender, _tokenId, _nftContractAddress, _bettingPrice, true, _beneficiaryAddress, _endDate);
 
-        lotteryId.increment();
+        lotteryIdCounter.increment();
 
         return this.onERC721Received.selector;
     }
 
-
     //Buy a ticket for an especific NFT lottery
+
     function buyTicket(uint _lotteryId) public payable {
-        require(_lotteryId < lotteryId.current(), "The lottery Id given does not correspond to an existing lottery.");
+        require(_lotteryId < lotteryIdCounter.current(), "The lottery Id given does not correspond to an existing lottery.");
         singleLottery storage l = historicLottery[_lotteryId];
         require(l.activeLottery, "The lottery Id given corresponds to a lottery that has already ended.");      
         require(msg.value == l.bettingPrice,  "To participate, please add the required amount.");      
@@ -136,73 +171,107 @@ contract Lottery is Ownable, VRFConsumerBaseV2, IERC721Receiver {
         emit BuyTicket(msg.sender, l.lotteryBalance);
     }
 
-    //Función pick the winner:
-    //Receives the number of ChainLink, s_randomWords[0], and adapts to number of players
-    //0 =<  winner number =< number of players
-    function pickTheWinner(uint _lotteryId) public {
-        require(_lotteryId < lotteryId.current(), "The lottery Id given does not correspond to an existing lottery.");
+    // End Lottery. Recieves the Id of the lottery and the index of the winner chosen from the players array.
+
+    function _endLottery(uint _lotteryId, uint _winnerIndex) internal {
+        require(_lotteryId < lotteryIdCounter.current(), "The lottery Id given does not correspond to an existing lottery.");
         singleLottery storage l = historicLottery[_lotteryId];
-        require(l.activeLottery, "The lottery Id given corresponds to a lottery that has already ended.");      
-        uint index = s_randomWords[0] % l.players.length;
-        l.lotteryWinner = l.players[index];
+        require(l.activeLottery, "The lottery Id given corresponds to a lottery that has already ended.");     
+        l.lotteryWinner = l.players[_winnerIndex];
 
-        //Transfer 80% of lotteryBalance to the winner and reset.
-        uint awardBalance = (l.lotteryBalance * 80) / 100;
-        (bool success, ) = payable(l.lotteryWinner).call{value: awardBalance}("");
-        require(success, "failed");
-
-        //TRANSFER THE NFT FROM CONTRACT TO WINNER:
-        IERC721 nftContract = IERC721(l.nftContractAddress);
-        nftContract.safeTransferFrom(address(this), l.lotteryWinner, l.nftTokenId);
-
+        //Transfer % of lotteryBalance to the winner and reset.
+        uint awardBalance = (l.lotteryBalance * (100-CONTRACT_FEE)) / 100;
+        (bool success, ) = payable(l.beneficiaryAddress).call{value: awardBalance}("");
+        require(success, "Transaction Failed");
 
         l.activeLottery = false;
         l.lotteryBalance = 0 ether;
 
-        emit PickTheWinner(l.lotteryWinner, l.activeLottery, l.nftContractAddress, awardBalance);
+        emit EndLotteryEvent(_lotteryId);
 
+        //TRANSFER THE NFT FROM CONTRACT TO WINNER:
+        IERC721 nftContract = IERC721(l.nftContractAddress);
+        nftContract.safeTransferFrom(address(this), l.lotteryWinner, l.nftTokenId);
     }
 
 
-        //NFTLotteryPrize memory prize = PREMIO
+    // Requests VRF coordinator to give a random word.
 
-        // Interface for interacting with the nftContract:
-        //IERC721 nftContract = IERC721(prize.nftContractAddress);
+    function requestWordsPendingLotteries() public returns (uint256 s_requestId) {
+        /*
+        TODO: check if any additional verification is needed. e.g. Any user could request words at any given time without limitation.
+        */
+        s_requestId = VRF_COORDINATOR_V2.requestRandomWords(
+            VRF_GAS_LANE,
+            VRF_SUBSCRIPTION_ID,
+            VRF_REQUEST_CONFIRMATIONS,
+            VRF_CALLBACK_GAS_LIMIT,
+            VRF_NUM_WORDS
+        );
+        s_pendingLotteryEnd = true;
+        emit PendingLotteriesWordsRequested(s_requestId);
+    }
 
-        // Transfer NFT from this contract to the winner
-        //nftContract.safeTransferFrom(address(this), players[index], prize.tokenId);
-    ///}
+    // Checks if the lottery with Id _lotteryId can be ended.
+
+    function _canEndLottery(uint256 _lotteryId) internal view returns (bool) {
+        if (s_pendingLotteryEnd) {
+            return false;
+        }
+        if (!historicLottery[_lotteryId].activeLottery) {
+            return false;
+        }
+        if (historicLottery[_lotteryId].endDate > block.timestamp) {
+            return false;
+        }
+        return true;
+    }
+
+    // KEEPER FUNCTIONS
 
 
-    // Starts a Lottery. User should have already given access to the contract to allow the transfer of the NFT
-    // Recieves the NFT Id and the contract of the NFT.
-    ///function startLottery(uint256 _tokenId, address _nftContractAddress) public returns (bytes4){
-        ///IERC721 nftContract = IERC721(_nftContractAddress);
-        ///nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
-        // Initialize the lottery over here
-        // prize = NFTLotteryPrize(_nftContractAddress, _tokenId);
-        // lotteryId = _lotteryCounter.current();
+    // Checks if there is any lottery which should be ended. Checkdata is currently not used.
 
-        //
-        ///_lotteryCounter.increment();
+    function checkUpkeep(bytes calldata checkdata)
+        external
+        view
+        override
+        returns (bool upkeepNeeded, bytes memory performData)
+    {
+        for (uint256 i = 0; i < lotteryIdCounter.current(); i++) {
+            if(_canEndLottery(i)){
+                upkeepNeeded = true;
+                break;
+            }
+        }     
+        performData = checkdata;
+    }
 
-        // Return value to allow the ERC721 openzeppelin implementation to fulfill the NFT transaction.
-        ///return this.onERC721Received.selector;
-   /// }
 
+    // Called by keeper once checkUpkeep returns true
+
+    function performUpkeep(bytes calldata) external override {
+        requestWordsPendingLotteries();
+    }
 
     //GET FUNCTIONS:
 
     //Each lottery info
-    function getLottery (uint _lotteryId) public view returns (address, address, uint, bool, address[] memory, uint, address, uint) {
-        require(_lotteryId < lotteryId.current(), "The lottery Id given does not correspond to an existing lottery.");
+    function getLottery (uint _lotteryId) public view returns (singleLottery memory) {
+        require(_lotteryId < lotteryIdCounter.current(), "The lottery Id given does not correspond to an existing lottery.");
         singleLottery storage l = historicLottery[_lotteryId];
-        return (l.nftOwner, l.nftContractAddress, l.bettingPrice, l.activeLottery, l.players, l.lotteryBalance, l.lotteryWinner, l.startDate);
+        return l;
     }
 
     //Contract Balance
     function getContractBalance() public view returns(uint){
-    return address(this).balance;
+        return address(this).balance;
+    }
+    
+    // Get latest lottery Id
+
+    function getLotteryCount() public view returns(uint256) {
+        return lotteryIdCounter.current();
     }
 
 }

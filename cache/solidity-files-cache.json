@@ -1,10 +1,10 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\contracts\\TestNFT.sol": {
-      "lastModificationDate": 1661630189112,
-      "contentHash": "2d1067ea2872c3eab5055c65de056ef0",
-      "sourceName": "contracts/TestNFT.sol",
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\contracts\\Lottery.sol": {
+      "lastModificationDate": 1662422957906,
+      "contentHash": "071bc0c449fe27277d4e1ae40c0bc4be",
+      "sourceName": "contracts/Lottery.sol",
       "solcConfig": {
         "version": "0.8.9",
         "settings": {
@@ -29,97 +29,20 @@
         }
       },
       "imports": [
-        "@openzeppelin/contracts/token/ERC721/ERC721.sol",
-        "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol",
         "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/Counters.sol"
+        "@openzeppelin/contracts/utils/Counters.sol",
+        "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol",
+        "@openzeppelin/contracts/token/ERC721/IERC721.sol",
+        "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol",
+        "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol",
+        "@chainlink/contracts/src/v0.8/KeeperCompatible.sol",
+        "hardhat/console.sol"
       ],
       "versionPragmas": [
-        "^0.8.4"
+        "^0.8.7"
       ],
       "artifacts": [
-        "TestNFT"
-      ]
-    },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\ERC721.sol": {
-      "lastModificationDate": 1661540422667,
-      "contentHash": "79ff1a7eb801a525aa315fb7a679eede",
-      "sourceName": "@openzeppelin/contracts/token/ERC721/ERC721.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "./IERC721.sol",
-        "./IERC721Receiver.sol",
-        "./extensions/IERC721Metadata.sol",
-        "../../utils/Address.sol",
-        "../../utils/Context.sol",
-        "../../utils/Strings.sol",
-        "../../utils/introspection/ERC165.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "ERC721"
-      ]
-    },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\extensions\\ERC721Enumerable.sol": {
-      "lastModificationDate": 1661540422672,
-      "contentHash": "88095889e59d16821879a8083f906503",
-      "sourceName": "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "../ERC721.sol",
-        "./IERC721Enumerable.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "ERC721Enumerable"
+        "Lottery"
       ]
     },
     "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\access\\Ownable.sol": {
@@ -194,6 +117,41 @@
         "Counters"
       ]
     },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\IERC721Receiver.sol": {
+      "lastModificationDate": 1661540422833,
+      "contentHash": "c22d4395e33763de693fd440c6fd10e1",
+      "sourceName": "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IERC721Receiver"
+      ]
+    },
     "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\IERC721.sol": {
       "lastModificationDate": 1661540422821,
       "contentHash": "ec99d946db3685a3630554aa6055bd7f",
@@ -231,10 +189,10 @@
         "IERC721"
       ]
     },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\IERC721Receiver.sol": {
-      "lastModificationDate": 1661540422833,
-      "contentHash": "c22d4395e33763de693fd440c6fd10e1",
-      "sourceName": "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol",
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@chainlink\\contracts\\src\\v0.8\\interfaces\\VRFCoordinatorV2Interface.sol": {
+      "lastModificationDate": 1661630355573,
+      "contentHash": "56ec852a2aeddf81bf5a5720a7fc6a63",
+      "sourceName": "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol",
       "solcConfig": {
         "version": "0.8.9",
         "settings": {
@@ -263,7 +221,376 @@
         "^0.8.0"
       ],
       "artifacts": [
-        "IERC721Receiver"
+        "VRFCoordinatorV2Interface"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@chainlink\\contracts\\src\\v0.8\\VRFConsumerBaseV2.sol": {
+      "lastModificationDate": 1661630355046,
+      "contentHash": "eb9cc526ef59dfc4d644f56ddca0633a",
+      "sourceName": "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.4"
+      ],
+      "artifacts": [
+        "VRFConsumerBaseV2"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@chainlink\\contracts\\src\\v0.8\\KeeperCompatible.sol": {
+      "lastModificationDate": 1661630355036,
+      "contentHash": "c153645393332a62a1e73cb0d5a6162c",
+      "sourceName": "@chainlink/contracts/src/v0.8/KeeperCompatible.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./KeeperBase.sol",
+        "./interfaces/KeeperCompatibleInterface.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "KeeperCompatible"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\hardhat\\console.sol": {
+      "lastModificationDate": 1661539948826,
+      "contentHash": "4ff3cd2f6272c9a6516e9ee4f2b967d3",
+      "sourceName": "hardhat/console.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.22 <0.9.0"
+      ],
+      "artifacts": [
+        "console"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\utils\\Context.sol": {
+      "lastModificationDate": 1661540422540,
+      "contentHash": "5f2c5c4b6af2dd4551027144797bc8be",
+      "sourceName": "@openzeppelin/contracts/utils/Context.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "Context"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\utils\\introspection\\IERC165.sol": {
+      "lastModificationDate": 1661540422789,
+      "contentHash": "03e6768535ac4da0e9756f1d8a4a018a",
+      "sourceName": "@openzeppelin/contracts/utils/introspection/IERC165.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "IERC165"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@chainlink\\contracts\\src\\v0.8\\KeeperBase.sol": {
+      "lastModificationDate": 1661630355032,
+      "contentHash": "216a5d4c261e07cc7b31f828950e35ad",
+      "sourceName": "@chainlink/contracts/src/v0.8/KeeperBase.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "KeeperBase"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@chainlink\\contracts\\src\\v0.8\\interfaces\\KeeperCompatibleInterface.sol": {
+      "lastModificationDate": 1661630355553,
+      "contentHash": "bdbf3e274e50272d9c830fa414fcbec9",
+      "sourceName": "@chainlink/contracts/src/v0.8/interfaces/KeeperCompatibleInterface.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "KeeperCompatibleInterface"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\contracts\\TestContracts\\LotteryMultiple.sol": {
+      "lastModificationDate": 1662300113463,
+      "contentHash": "d79888ece4fc82764ab089ea6fd17bd4",
+      "sourceName": "contracts/TestContracts/LotteryMultiple.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/Counters.sol",
+        "hardhat/console.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.7"
+      ],
+      "artifacts": [
+        "LotteryMultiple"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\contracts\\TestContracts\\TestNFTHandler.sol": {
+      "lastModificationDate": 1662300113709,
+      "contentHash": "dc455273ce74add76e87d73f4ee406f5",
+      "sourceName": "contracts/TestContracts/TestNFTHandler.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC721/IERC721.sol",
+        "@openzeppelin/contracts/utils/Counters.sol",
+        "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.7"
+      ],
+      "artifacts": [
+        "TestNFTHandler"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\ERC721.sol": {
+      "lastModificationDate": 1661540422667,
+      "contentHash": "79ff1a7eb801a525aa315fb7a679eede",
+      "sourceName": "@openzeppelin/contracts/token/ERC721/ERC721.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./IERC721.sol",
+        "./IERC721Receiver.sol",
+        "./extensions/IERC721Metadata.sol",
+        "../../utils/Address.sol",
+        "../../utils/Context.sol",
+        "../../utils/Strings.sol",
+        "../../utils/introspection/ERC165.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "ERC721"
       ]
     },
     "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\extensions\\IERC721Metadata.sol": {
@@ -338,41 +665,6 @@
         "Address"
       ]
     },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\utils\\Context.sol": {
-      "lastModificationDate": 1661540422540,
-      "contentHash": "5f2c5c4b6af2dd4551027144797bc8be",
-      "sourceName": "@openzeppelin/contracts/utils/Context.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "Context"
-      ]
-    },
     "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\utils\\Strings.sol": {
       "lastModificationDate": 1661540422936,
       "contentHash": "cf46906c4035f51639a22265066a9e78",
@@ -445,10 +737,10 @@
         "ERC165"
       ]
     },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\utils\\introspection\\IERC165.sol": {
-      "lastModificationDate": 1661540422789,
-      "contentHash": "03e6768535ac4da0e9756f1d8a4a018a",
-      "sourceName": "@openzeppelin/contracts/utils/introspection/IERC165.sol",
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\extensions\\ERC721URIStorage.sol": {
+      "lastModificationDate": 1661540422689,
+      "contentHash": "8af32effd0536e2971ff8496812a5016",
+      "sourceName": "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol",
       "solcConfig": {
         "version": "0.8.9",
         "settings": {
@@ -472,12 +764,93 @@
           }
         }
       },
-      "imports": [],
+      "imports": [
+        "../ERC721.sol"
+      ],
       "versionPragmas": [
         "^0.8.0"
       ],
       "artifacts": [
-        "IERC165"
+        "ERC721URIStorage"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\contracts\\TestContracts\\TestNFT.sol": {
+      "lastModificationDate": 1662404427143,
+      "contentHash": "9127c34e0d951f3df938ec19023f0524",
+      "sourceName": "contracts/TestContracts/TestNFT.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC721/ERC721.sol",
+        "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol",
+        "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol",
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/Counters.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.4"
+      ],
+      "artifacts": [
+        "TestNFT"
+      ]
+    },
+    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\extensions\\ERC721Enumerable.sol": {
+      "lastModificationDate": 1661540422672,
+      "contentHash": "88095889e59d16821879a8083f906503",
+      "sourceName": "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol",
+      "solcConfig": {
+        "version": "0.8.9",
+        "settings": {
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../ERC721.sol",
+        "./IERC721Enumerable.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.0"
+      ],
+      "artifacts": [
+        "ERC721Enumerable"
       ]
     },
     "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@openzeppelin\\contracts\\token\\ERC721\\extensions\\IERC721Enumerable.sol": {
@@ -515,232 +888,6 @@
       ],
       "artifacts": [
         "IERC721Enumerable"
-      ]
-    },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\contracts\\Lottery.sol": {
-      "lastModificationDate": 1662132619276,
-      "contentHash": "e165220aae95d994ac8b5ffdef5bba6f",
-      "sourceName": "contracts/Lottery.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/Counters.sol",
-        "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol",
-        "@openzeppelin/contracts/token/ERC721/IERC721.sol",
-        "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol",
-        "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol",
-        "hardhat/console.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.7"
-      ],
-      "artifacts": [
-        "Lottery"
-      ]
-    },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@chainlink\\contracts\\src\\v0.8\\interfaces\\VRFCoordinatorV2Interface.sol": {
-      "lastModificationDate": 1661630355573,
-      "contentHash": "56ec852a2aeddf81bf5a5720a7fc6a63",
-      "sourceName": "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.0"
-      ],
-      "artifacts": [
-        "VRFCoordinatorV2Interface"
-      ]
-    },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@chainlink\\contracts\\src\\v0.8\\VRFConsumerBaseV2.sol": {
-      "lastModificationDate": 1661630355046,
-      "contentHash": "eb9cc526ef59dfc4d644f56ddca0633a",
-      "sourceName": "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        "^0.8.4"
-      ],
-      "artifacts": [
-        "VRFConsumerBaseV2"
-      ]
-    },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\hardhat\\console.sol": {
-      "lastModificationDate": 1661539948826,
-      "contentHash": "4ff3cd2f6272c9a6516e9ee4f2b967d3",
-      "sourceName": "hardhat/console.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [],
-      "versionPragmas": [
-        ">=0.4.22 <0.9.0"
-      ],
-      "artifacts": [
-        "console"
-      ]
-    },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\contracts\\TestNFTHandler.sol": {
-      "lastModificationDate": 1661637003426,
-      "contentHash": "dc455273ce74add76e87d73f4ee406f5",
-      "sourceName": "contracts/TestNFTHandler.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/token/ERC721/IERC721.sol",
-        "@openzeppelin/contracts/utils/Counters.sol",
-        "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.7"
-      ],
-      "artifacts": [
-        "TestNFTHandler"
-      ]
-    },
-    "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\contracts\\LotteryMultiple.sol": {
-      "lastModificationDate": 1662039728379,
-      "contentHash": "d79888ece4fc82764ab089ea6fd17bd4",
-      "sourceName": "contracts/LotteryMultiple.sol",
-      "solcConfig": {
-        "version": "0.8.9",
-        "settings": {
-          "optimizer": {
-            "enabled": false,
-            "runs": 200
-          },
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/access/Ownable.sol",
-        "@openzeppelin/contracts/utils/Counters.sol",
-        "hardhat/console.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.7"
-      ],
-      "artifacts": [
-        "LotteryMultiple"
       ]
     },
     "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\node_modules\\@chainlink\\contracts\\src\\v0.8\\mocks\\VRFCoordinatorV2Mock.sol": {
