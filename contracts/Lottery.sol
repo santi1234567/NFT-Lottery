@@ -13,7 +13,6 @@ import "@chainlink/contracts/src/v0.8/KeeperCompatible.sol";
 import "hardhat/console.sol";
 
 /* TODO:
-- Add require to requestWordsPendingLotteries().
 - Create function onlyOwner to retrieve the contract fee.
 
 */
@@ -195,29 +194,10 @@ contract Lottery is
     }
 
 
-    // Requests VRF coordinator to give a random word.
-
-    function requestWordsPendingLotteries() public returns (uint256 s_requestId) {
-        /*
-        TODO: check if any additional verification is needed. e.g. Any user could request words at any given time without limitation.
-        */
-        s_requestId = VRF_COORDINATOR_V2.requestRandomWords(
-            VRF_GAS_LANE,
-            VRF_SUBSCRIPTION_ID,
-            VRF_REQUEST_CONFIRMATIONS,
-            VRF_CALLBACK_GAS_LIMIT,
-            VRF_NUM_WORDS
-        );
-        s_pendingLotteryEnd = true;
-        emit PendingLotteriesWordsRequested(s_requestId);
-    }
 
     // Checks if the lottery with Id _lotteryId can be ended.
 
     function _canEndLottery(uint256 _lotteryId) internal view returns (bool) {
-        if (s_pendingLotteryEnd) {
-            return false;
-        }
         if (!historicLottery[_lotteryId].activeLottery) {
             return false;
         }
@@ -238,12 +218,14 @@ contract Lottery is
         override
         returns (bool upkeepNeeded, bytes memory performData)
     {
-        for (uint256 i = 0; i < lotteryIdCounter.current(); i++) {
-            if(_canEndLottery(i)){
-                upkeepNeeded = true;
-                break;
-            }
-        }     
+        if (!s_pendingLotteryEnd) {
+            for (uint256 i = 0; i < lotteryIdCounter.current(); i++) {
+                if(_canEndLottery(i)){
+                    upkeepNeeded = true;
+                    break;
+                }
+            }                
+        }
         performData = checkdata;
     }
 
@@ -252,6 +234,22 @@ contract Lottery is
 
     function performUpkeep(bytes calldata) external override {
         requestWordsPendingLotteries();
+    }
+
+    // Requests VRF coordinator to give a random word.
+
+    function requestWordsPendingLotteries() public returns (uint256 s_requestId) {
+        (bool upkeepNeeded,) = this.checkUpkeep("");
+        require(upkeepNeeded, "There are no lotteries pending to be ended");
+        s_requestId = VRF_COORDINATOR_V2.requestRandomWords(
+            VRF_GAS_LANE,
+            VRF_SUBSCRIPTION_ID,
+            VRF_REQUEST_CONFIRMATIONS,
+            VRF_CALLBACK_GAS_LIMIT,
+            VRF_NUM_WORDS
+        );
+        s_pendingLotteryEnd = true;
+        emit PendingLotteriesWordsRequested(s_requestId);
     }
 
     //GET FUNCTIONS:
