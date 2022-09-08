@@ -143,7 +143,6 @@ describe("Lottery Contract", () => {
                 await expect(ownerOfMinted).to.equal(lotteryContract.address); 
                  
                 const lottery = (await lotteryContract.getLottery(lotteryId));
-                console.log(lottery)
                 await expect(lottery.slice(0, lottery.length)).to.eql(
                     [
                         owner.address,
@@ -394,6 +393,37 @@ describe("Lottery Contract", () => {
                 await endPendingLotteries(lotteryContract, vrfCoordinatorV2Mock);
                 await expect(lotteryContract.buyTicket(lotteryId, { value: bettingPrice}))
                     .to.be.revertedWith("The lottery Id given corresponds to a lottery that has already ended.");
+            }); 
+
+            it("Tries to request a random word when no lotteries are pending to be ended", async () => {
+                const { lotteryContract, nftContract, vrfCoordinatorV2Mock, owner, addr1, addr2, addr3 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                const nftId = 0;
+        
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                // Start lottery
+                const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
+                const blockNumber = await ethers.provider.getBlockNumber()
+                const currentTimestamp = (await ethers.provider.getBlock(blockNumber)).timestamp;
+                const lotteryTime = DEFAULT_LOTTERY_TIME; 
+                const endTime = currentTimestamp+lotteryTime; 
+                tx = await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, addr3.address, endTime);
+                const lotteryId = 0;
+           
+                // Buy ticket (owner)
+                await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});
+        
+                // Buy ticket (addr1)
+                await lotteryContract.connect(addr1).buyTicket(lotteryId, { value: bettingPrice});
+
+                // Buy ticket (addr2)
+                await lotteryContract.connect(addr2).buyTicket(lotteryId, { value: bettingPrice});
+
+                await expect(lotteryContract.requestWordsPendingLotteries())
+                    .to.be.revertedWith("There are no lotteries pending to be ended");
             }); 
         });
     
