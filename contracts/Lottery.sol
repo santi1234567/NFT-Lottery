@@ -28,6 +28,10 @@ contract Lottery is
     // Contract fee % 
     uint256 public constant CONTRACT_FEE = 5;
 
+    // Lottery contract fee balance
+
+    uint256 public contractFeeBalance = 0;
+
     // Counters
 
     using Counters for Counters.Counter;
@@ -178,10 +182,13 @@ contract Lottery is
         require(l.activeLottery, "The lottery Id given corresponds to a lottery that has already ended.");     
         l.lotteryWinner = l.players[_winnerIndex];
 
-        //Transfer % of lotteryBalance to the winner and reset.
+        //Transfer % of lotteryBalance to the winner and reset. 
         uint awardBalance = (l.lotteryBalance * (100-CONTRACT_FEE)) / 100;
         (bool success, ) = payable(l.beneficiaryAddress).call{value: awardBalance}("");
         require(success, "Transaction Failed");
+
+        //Record contract fee gains
+        contractFeeBalance += (l.lotteryBalance * (CONTRACT_FEE)) / 100;
 
         l.activeLottery = false;
         l.lotteryBalance = 0 ether;
@@ -252,6 +259,15 @@ contract Lottery is
         emit PendingLotteriesWordsRequested(s_requestId);
     }
 
+    // For contract admins to withdraw contract fee gains. 
+    
+    function withdrawContractFeeGains() public onlyOwner {
+        (bool success, ) = payable(msg.sender).call{value: contractFeeBalance}("");
+        require(success, "Transaction Failed");
+        contractFeeBalance = 0;
+    }
+
+
     //GET FUNCTIONS:
 
     //Each lottery info
@@ -262,8 +278,8 @@ contract Lottery is
     }
 
     //Contract Balance
-    function getContractBalance() public view returns(uint){
-        return address(this).balance;
+    function getContractFeeBalance() public view returns(uint){
+        return contractFeeBalance;
     }
     
     // Get latest lottery Id

@@ -426,7 +426,83 @@ describe("Lottery Contract", () => {
                     .to.be.revertedWith("There are no lotteries pending to be ended");
             }); 
         });
-    
+        
+        describe("Contract Fee Gains Tests", () => {
+            it("Succesfully withdraws fee gains", async () => {
+                const { lotteryContract, nftContract, vrfCoordinatorV2Mock, owner, addr1, addr2, addr3 } = await testSetup({});
+        
+                // Mint an NFT
+                await nftContract.safeMint();
+                let nftId = 0;
+        
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                // Start lottery
+                const bettingPrice = ethers.utils.parseEther("0.1"); // 0.1 ether
+                let blockNumber = await ethers.provider.getBlockNumber()
+                let currentTimestamp = (await ethers.provider.getBlock(blockNumber)).timestamp;
+                let lotteryTime = DEFAULT_LOTTERY_TIME; 
+                let endTime = currentTimestamp+lotteryTime; 
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, addr3.address, endTime);
+                let lotteryId = 0;
+           
+                // Buy ticket (owner)
+                await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});
+        
+                // Buy ticket (addr1)
+                await lotteryContract.connect(addr1).buyTicket(lotteryId, { value: bettingPrice});
+
+                // Buy ticket (addr2)
+                await lotteryContract.connect(addr2).buyTicket(lotteryId, { value: bettingPrice});
+                let end;
+                do {
+                    end = await lotteryContract.checkUpkeep("0x0000000000000000000000000000000000000000000000000000006d6168616d");
+                    await network.provider.send("evm_increaseTime", [10])
+                    await network.provider.send("evm_mine")
+                } while (!end[0]);
+                await endPendingLotteries(lotteryContract, vrfCoordinatorV2Mock);
+                let contractFeeGains =  bettingPrice.mul(ethers.BigNumber.from(3)).mul(await lotteryContract.CONTRACT_FEE()).div(ethers.BigNumber.from(100));
+                expect(await lotteryContract.getContractFeeBalance()).to.equal(contractFeeGains);
+
+                // Mint an NFT
+                await nftContract.safeMint();
+                nftId = 1;
+                
+                // Approve contract to be able to transfer the NFT
+                await nftContract.approve(lotteryContract.address, nftId);
+                // Start lottery
+                blockNumber = await ethers.provider.getBlockNumber()
+                currentTimestamp = (await ethers.provider.getBlock(blockNumber)).timestamp;
+                lotteryTime = DEFAULT_LOTTERY_TIME; 
+                endTime = currentTimestamp+lotteryTime; 
+                await lotteryContract.startLottery(nftId, nftContract.address, bettingPrice, addr3.address, endTime);
+                lotteryId = 1;
+                
+                // Buy ticket (owner)
+                await lotteryContract.buyTicket(lotteryId, { value: bettingPrice});
+                
+                // Buy ticket (addr1)
+                await lotteryContract.connect(addr1).buyTicket(lotteryId, { value: bettingPrice});
+                
+                do {
+                    end = await lotteryContract.checkUpkeep("0x0000000000000000000000000000000000000000000000000000006d6168616d");
+                    await network.provider.send("evm_increaseTime", [10])
+                    await network.provider.send("evm_mine")
+                } while (!end[0]);
+                await endPendingLotteries(lotteryContract, vrfCoordinatorV2Mock);
+
+                contractFeeGains = contractFeeGains.add(bettingPrice.mul(ethers.BigNumber.from(2)).mul(await lotteryContract.CONTRACT_FEE()).div(ethers.BigNumber.from(100)));
+                expect(await lotteryContract.getContractFeeBalance()).to.equal(contractFeeGains);
+
+                let ownerWalletFunds = await owner.getBalance();
+                let tx = await lotteryContract.withdrawContractFeeGains();
+                let receipt = await tx.wait()
+                let gasSpent = receipt.gasUsed.mul(receipt.effectiveGasPrice)
+                expect(await owner.getBalance()).to.equal(ownerWalletFunds.add(contractFeeGains).sub(gasSpent));
+                expect(await lotteryContract.getContractFeeBalance()).to.equal(ethers.BigNumber.from(0));
+            });
+
+        });
 
 
     });
