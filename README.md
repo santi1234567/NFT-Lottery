@@ -12,4 +12,4 @@ The contract connected with the frontend is deployed in the Görli testnet: http
 
 Latest version of the contract deployed in Görli testnet: https://goerli.etherscan.io/address/0x8C7b649e6566ce2952E8F9f6fA95956a7bC194AD
 
-Check out the deployed app and start a lottery with one of your NFTs! https://project-web3-nft.vercel.app/ 
+Check out the deployed app and start a lottery with one of your NFTs! https://philanthropy.vercel.app/
