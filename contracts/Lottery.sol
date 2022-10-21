@@ -33,7 +33,8 @@ contract Lottery is
     // Counters
 
     using Counters for Counters.Counter;
-
+    Counters.Counter lotteryIdCounter;
+    Counters.Counter firstActiveLotteryId; // used for optimization when checking for pending lotteries
     //
 
     bool public s_pendingLotteryEnd;
@@ -64,8 +65,6 @@ contract Lottery is
         VRF_GAS_LANE = _vrfGasLane;
         VRF_CALLBACK_GAS_LIMIT = _vrfCallbackGasLimit;
     }
-
-    Counters.Counter lotteryIdCounter;
 
     struct singleLottery {
         address nftOwner;
@@ -112,7 +111,11 @@ contract Lottery is
         uint256[] memory randomWords
     ) internal override {
         s_pendingLotteryEnd = false;
-        for (uint256 i = 0; i < lotteryIdCounter.current(); i++) {
+        for (
+            uint256 i = firstActiveLotteryId.current();
+            i < lotteryIdCounter.current();
+            i++
+        ) {
             if (_canEndLottery(i)) {
                 if (historicLottery[i].players.length == 0) {
                     _endLottery(i, 0);
@@ -254,6 +257,9 @@ contract Lottery is
             );
         }
         emit EndLotteryEvent(_lotteryId);
+        if (_lotteryId == firstActiveLotteryId.current()) {
+            firstActiveLotteryId.increment();
+        }
         l.activeLottery = false;
     }
 
@@ -280,7 +286,11 @@ contract Lottery is
         returns (bool upkeepNeeded, bytes memory performData)
     {
         if (!s_pendingLotteryEnd) {
-            for (uint256 i = 0; i < lotteryIdCounter.current(); i++) {
+            for (
+                uint256 i = firstActiveLotteryId.current();
+                i < lotteryIdCounter.current();
+                i++
+            ) {
                 if (_canEndLottery(i)) {
                     upkeepNeeded = true;
                     break;
@@ -318,11 +328,10 @@ contract Lottery is
     // For contract admins to withdraw contract fee gains.
 
     function withdrawContractFeeGains() public onlyOwner {
-        (bool success, ) = payable(msg.sender).call{value: contractFeeBalance}(
-            ""
-        );
-        require(success, "Transaction Failed");
+        uint256 value = contractFeeBalance;
         contractFeeBalance = 0;
+        (bool success, ) = payable(msg.sender).call{value: value}("");
+        require(success, "Transaction Failed");
     }
 
     //GET FUNCTIONS:

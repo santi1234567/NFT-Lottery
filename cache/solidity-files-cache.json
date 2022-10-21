@@ -2,8 +2,8 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\santi\\Nextcloud\\platzi\\raffle-house\\contracts\\Lottery.sol": {
-      "lastModificationDate": 1663078960948,
-      "contentHash": "b0a3ed7c0ba88fef8fd4c2ac62d6c0cb",
+      "lastModificationDate": 1666360209656,
+      "contentHash": "78987411b218b7dbc0103766c0bc17be",
       "sourceName": "contracts/Lottery.sol",
       "solcConfig": {
         "version": "0.8.9",
